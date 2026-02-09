@@ -1,0 +1,8 @@
+
+{
+  "name": "VibeCast - Team Mood Tracker",
+  "description": "An interactive gamified team check-in application that uses AI to synthesize team moods and kudos into witty summaries with actionable advice.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
