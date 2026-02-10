@@ -1,0 +1,139 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   🚀 VIBECAST DEPLOYMENT - QUICK REFERENCE CARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 DEPLOYMENT ORDER:
+   1. Push code to GitHub
+   2. Set up Supabase (15 min)
+   3. Get Gemini API key (5 min)
+   4. Deploy to Vercel (10 min)
+   5. Test everything (10 min)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📦 STEP 1: PUSH TO GITHUB
+
+git push origin main
+
+(Use GitHub Desktop if you get auth error)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🗄️ STEP 2: SUPABASE SETUP
+
+URL: https://supabase.com
+
+A. Create Project:
+   - Name: vibecast
+   - Generate strong password → SAVE IT!
+   - Choose closest region
+
+B. Run SQL (SQL Editor → New query):
+   - Copy ENTIRE contents of: supabase-schema.sql
+   - Paste and Run
+
+C. Enable Anonymous Auth:
+   - Authentication → Providers → Anonymous Sign-ins → ON
+
+D. Get Credentials (Settings → API):
+   - Project URL: https://xxxxx.supabase.co
+   - anon public key: (long string)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🤖 STEP 3: GEMINI API KEY
+
+URL: https://ai.google.dev/
+
+- Sign in with Google
+- Click "Get API key"
+- Copy the key
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 STEP 4: DEPLOY TO VERCEL
+
+URL: https://vercel.com
+
+A. Import Project:
+   - Add New → Project
+   - Select: VibeCast repository
+   - Click Import
+
+B. Verify Settings (should auto-detect):
+   ✓ Framework: Vite
+   ✓ Build Command: npm run build
+   ✓ Output Directory: dist
+
+C. Add Environment Variables (CRITICAL!):
+
+   ┌─────────────────────┬───────────────────────────┬─────────────────┐
+   │ Variable Name       │ Value                     │ Environments    │
+   ├─────────────────────┼───────────────────────────┼─────────────────┤
+   │ GEMINI_API_KEY      │ (your Gemini key)         │ ✓ All 3 boxes   │
+   │ SUPABASE_URL        │ (your Supabase URL)       │ ✓ All 3 boxes   │
+   │ SUPABASE_ANON_KEY   │ (your Supabase anon key)  │ ✓ All 3 boxes   │
+   └─────────────────────┴───────────────────────────┴─────────────────┘
+
+D. Click "Deploy" → Wait 2-3 minutes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ STEP 5: TESTING CHECKLIST
+
+Your Vercel URL: https://vibecast-xxx.vercel.app
+
+□ Homepage loads (no "Offline Mode" banner)
+□ Create session → get session code
+□ Join in incognito window → submit vote
+□ End voting → see AI summary with kudos
+□ Check History → see past session
+□ Check Supabase Table Editor → see data
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🐛 COMMON ISSUES
+
+"Offline Mode" banner:
+   → Missing env vars in Vercel → Add them → Redeploy
+
+Votes not saving:
+   → Check Supabase: SQL ran? Anonymous auth enabled?
+
+AI summary fails:
+   → Check GEMINI_API_KEY in Vercel
+   → Verify quota at ai.google.dev
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 YOUR PROJECT INFO
+
+GitHub: https://github.com/evanoubiss/VibeCast.git
+Status: ✅ Build tested and working
+Tech Stack: React + Vite + Supabase + Gemini AI
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔗 SAVE THESE URLS
+
+□ Vercel Dashboard: https://vercel.com/dashboard
+□ Supabase Dashboard: https://supabase.com/dashboard  
+□ Google AI Studio: https://ai.google.dev/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 FUTURE UPDATES
+
+Auto-deploy on push:
+   git add .
+   git commit -m "Update"
+   git push origin main
+   → Vercel deploys automatically! 🚀
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+See DEPLOYMENT_CHECKLIST.md for detailed step-by-step guide.
+See DEPLOYMENT.md for comprehensive troubleshooting.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
