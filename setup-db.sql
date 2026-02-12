@@ -1,8 +1,6 @@
 -- VibeCast Supabase Database Schema
--- Run this SQL in Supabase SQL Editor to set up your database
-
--- Create sessions table with quoted identifiers to preserve camelCase
-CREATE TABLE sessions (
+-- Note: Column names are quoted to preserve camelCase in PostgreSQL
+CREATE TABLE IF NOT EXISTS sessions (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   "themeType" TEXT NOT NULL CHECK ("themeType" IN ('emoji', 'weather', 'custom')),
@@ -15,8 +13,7 @@ CREATE TABLE sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create votes table with quoted identifiers
-CREATE TABLE votes (
+CREATE TABLE IF NOT EXISTS votes (
   id TEXT PRIMARY KEY,
   session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
   nickname TEXT NOT NULL,
@@ -27,21 +24,19 @@ CREATE TABLE votes (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create indexes for better query performance
-CREATE INDEX idx_sessions_startTime ON sessions("startTime" DESC);
-CREATE INDEX idx_votes_session_id ON votes(session_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_startTime ON sessions("startTime" DESC);
+CREATE INDEX IF NOT EXISTS idx_votes_session_id ON votes(session_id);
 
--- Enable Row Level Security (RLS)
 ALTER TABLE sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE votes ENABLE ROW LEVEL SECURITY;
 
--- Create policies to allow anonymous access
--- (Since the app uses anonymous auth, we allow all operations)
+DROP POLICY IF EXISTS "Allow all operations on sessions" ON sessions;
 CREATE POLICY "Allow all operations on sessions" 
 ON sessions FOR ALL 
 USING (true) 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow all operations on votes" ON votes;
 CREATE POLICY "Allow all operations on votes" 
 ON votes FOR ALL 
 USING (true) 

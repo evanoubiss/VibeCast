@@ -7,6 +7,7 @@ import ParticipantView from './components/ParticipantView';
 import BigReveal from './components/BigReveal';
 import LandingPage from './components/LandingPage';
 import HistoryView from './components/HistoryView';
+import DiagnosticPanel from './components/DiagnosticPanel';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 
 const App: React.FC = () => {
@@ -38,7 +39,11 @@ const App: React.FC = () => {
       if (isSupabaseConfigured) {
         try {
           // Try to sign in anonymously
-          await supabase.auth.signInAnonymously();
+          const { error: authError } = await supabase.auth.signInAnonymously();
+          if (authError) {
+            console.error("Anonymous auth error:", authError);
+            console.warn("⚠️ Check that anonymous auth is enabled in Supabase Dashboard");
+          }
           
           // Fetch history from Supabase
           const { data: sessionsData, error: sessionsError } = await supabase
@@ -47,15 +52,23 @@ const App: React.FC = () => {
             .order('startTime', { ascending: false });
 
           if (sessionsData) {
+            console.log(`✓ Loaded ${sessionsData.length} session(s) from cloud`);
             setHistory(sessionsData.map((s: any) => ({
               ...s,
               votes: s.votes || []
             })));
           } else if (sessionsError) {
             console.error("Supabase fetch error:", sessionsError);
+            if (sessionsError.code === '42P01') {
+              console.warn("⚠️ Database tables not found. Please run setup-db.sql in Supabase SQL Editor");
+            } else {
+              console.warn(`⚠️ Cloud sync unavailable: ${sessionsError.message}`);
+            }
+            // Keep using local history as fallback
           }
         } catch (e) {
           console.error("Supabase initialization failed:", e);
+          console.warn("⚠️ Running with local storage only");
         }
       }
       
@@ -84,23 +97,35 @@ const App: React.FC = () => {
     };
 
     if (isSupabaseConfigured) {
-      const { data, error } = await supabase
-        .from('sessions')
-        .insert([{
-          id: newSession.id,
-          name: newSession.name,
-          themeType: newSession.themeType,
-          startTime: newSession.startTime,
-          timerDuration: newSession.timerDuration,
-          status: newSession.status
-        }])
-        .select()
-        .single();
+      try {
+        const { data, error } = await supabase
+          .from('sessions')
+          .insert([{
+            id: newSession.id,
+            name: newSession.name,
+            themeType: newSession.themeType,
+            startTime: newSession.startTime,
+            timerDuration: newSession.timerDuration,
+            status: newSession.status
+          }])
+          .select()
+          .single();
 
-      if (error) {
-        console.error("Supabase session creation error:", error);
-        setError("Database sync failed. Session remains local.");
-        setTimeout(() => setError(''), 3000);
+        if (error) {
+          console.error("Supabase session creation error:", error);
+          if (error.code === '42P01') {
+            setError("⚠️ Database not set up! Run setup-db.sql in Supabase. Session saved locally only.");
+          } else {
+            setError(`⚠️ Cloud sync failed: ${error.message}. Session saved locally only.`);
+          }
+          setTimeout(() => setError(''), 5000);
+        } else {
+          console.log("✓ Session created and synced to cloud:", newSession.id);
+        }
+      } catch (e) {
+        console.error("Session creation error:", e);
+        setError("⚠️ Cloud sync failed. Session saved locally only.");
+        setTimeout(() => setError(''), 5000);
       }
     }
 
@@ -113,20 +138,40 @@ const App: React.FC = () => {
     setNickname(name);
     
     if (isSupabaseConfigured) {
-      const { data: found, error } = await supabase
-        .from('sessions')
-        .select('*, votes (*)')
-        .eq('id', id)
-        .single();
+      try {
+        const { data: found, error } = await supabase
+          .from('sessions')
+          .select('*, votes (*)')
+          .eq('id', id)
+          .single();
 
-      if (found) {
-        const fullSession = { ...found, votes: found.votes || [] };
-        setCurrentSessionId(id);
-        if (!history.find(h => h.id === id)) {
-          setHistory(prev => [fullSession, ...prev]);
+        if (error) {
+          console.error("Join session Supabase error:", error);
+          // Check if it's a table doesn't exist error or policy error
+          if (error.code === '42P01') {
+            setError("Database not set up. Please run setup-db.sql in Supabase.");
+          } else if (error.code === 'PGRST116') {
+            // No rows returned - session doesn't exist in DB
+            console.log("Session not in database, checking local history...");
+          } else {
+            setError(`Database error: ${error.message}`);
+            setTimeout(() => setError(''), 5000);
+          }
         }
-        setView('participant');
-        return;
+
+        if (found) {
+          const fullSession = { ...found, votes: found.votes || [] };
+          setCurrentSessionId(id);
+          if (!history.find(h => h.id === id)) {
+            setHistory(prev => [fullSession, ...prev]);
+          }
+          setView('participant');
+          return;
+        }
+      } catch (e) {
+        console.error("Join session error:", e);
+        setError(`Connection error: ${e instanceof Error ? e.message : 'Unknown error'}`);
+        setTimeout(() => setError(''), 5000);
       }
     }
 
@@ -136,8 +181,9 @@ const App: React.FC = () => {
       setCurrentSessionId(id);
       setView('participant');
     } else {
-      setError("Session not found. Check the code or Supabase connection.");
-      setTimeout(() => setError(''), 3000);
+      const mode = isSupabaseConfigured ? "cloud and local storage" : "local storage only (offline mode)";
+      setError(`Session "${id}" not found in ${mode}. Verify the code is correct.`);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -172,7 +218,12 @@ const App: React.FC = () => {
           session_id: session.id
         }]);
       
-      if (error) console.error("Supabase vote insert error:", error);
+      if (error) {
+        console.error("Supabase vote insert error:", error);
+        console.warn("⚠️ Vote saved locally but not synced to cloud");
+      } else {
+        console.log("✓ Vote synced to cloud");
+      }
     }
   };
 
@@ -302,6 +353,8 @@ const App: React.FC = () => {
       <footer className="p-4 text-center text-slate-400 text-xs border-t bg-white">
         © 2024 VibeCast Team Mood Tracker • Powered by Gemini AI
       </footer>
+
+      <DiagnosticPanel />
     </div>
   );
 };
